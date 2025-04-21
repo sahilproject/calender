@@ -1,10 +1,9 @@
 "use client";
 import React, { useEffect, useState } from "react";
-import FullCalendar, {
-  DateClickArg,
-  EventClickArg,
-  EventContentArg,
-} from "@fullcalendar/react";
+import FullCalendar from "@fullcalendar/react";
+import { EventClickArg, EventContentArg } from "@fullcalendar/core";
+import { DateClickArg } from "@fullcalendar/interaction";
+
 import dayGridPlugin from "@fullcalendar/daygrid";
 import interactionPlugin from "@fullcalendar/interaction";
 import timeGridPlugin from "@fullcalendar/timegrid";
@@ -22,7 +21,8 @@ import {
 import { HexColorPicker } from "react-colorful";
 import { supabase } from "@/lib/supabaseClient";
 
-const formatTime = (date: Date): string => {
+const formatTime = (date: Date | null): string => {
+  if (!date) return "N/A";
   const hours = date.getHours();
   const minutes = date.getMinutes();
   const ampm = hours >= 12 ? "pm" : "am";
@@ -49,6 +49,10 @@ interface FormData {
   endDate: string;
   endTime: string;
   color: string;
+}
+
+interface ExtendedEventProps {
+  image?: string;
 }
 
 const MyCalendar: React.FC = () => {
@@ -104,9 +108,11 @@ const MyCalendar: React.FC = () => {
 
     setSelectedEventId(info.event.id);
 
+    const extendedProps = info.event.extendedProps as ExtendedEventProps;
+
     setFormData({
       title: info.event.title,
-      image: (info.event.extendedProps as any).image || "",
+      image: extendedProps.image || "",
       imageFile: null,
       startDate: start.toISOString().split("T")[0],
       startTime: start.toTimeString().slice(0, 5),
@@ -208,49 +214,55 @@ const MyCalendar: React.FC = () => {
           center: "title",
           right: "dayGridMonth,timeGridWeek,timeGridDay",
         }}
-        eventContent={(eventInfo: EventContentArg) => (
-          <Tooltip
-            title={
-              <Box>
-                {(eventInfo.event.extendedProps as any).image && (
-                  <img
-                    src={(eventInfo.event.extendedProps as any).image}
-                    alt="Event Image"
-                    style={{ width: "150px", height: "auto" }}
-                  />
-                )}
-                <Typography variant="body2" color="textSecondary">
-                  {eventInfo.event.start?.toLocaleString()} -{" "}
-                  {eventInfo.event.end?.toLocaleString()}
-                </Typography>
-              </Box>
-            }
-          >
-            <div
-              style={{
-                backgroundColor: "#d4f8d4",
-                padding: "6px 8px",
-                borderRadius: "8px",
-                fontSize: "12px",
-                fontWeight: "bold",
-                color: "#1a1a1a",
-                cursor: "pointer",
-              }}
+        eventContent={(eventInfo: EventContentArg) => {
+          const extendedProps = eventInfo.event.extendedProps as ExtendedEventProps;
+
+          return (
+            <Tooltip
+              title={
+                <Box>
+                  {extendedProps.image && (
+                    <img
+                      src={extendedProps.image}
+                      alt="Event Image"
+                      style={{ width: "150px", height: "auto" }}
+                    />
+                  )}
+                  <Typography variant="body2" color="textSecondary">
+                    {eventInfo.event.start?.toLocaleString()} -{" "}
+                    {eventInfo.event.end?.toLocaleString()}
+                  </Typography>
+                </Box>
+              }
             >
-              <div>{eventInfo.event.title}</div>
               <div
                 style={{
-                  fontSize: "11px",
-                  fontWeight: "normal",
-                  marginTop: "2px",
+                  backgroundColor: "#d4f8d4",
+                  padding: "6px 8px",
+                  borderRadius: "8px",
+                  fontSize: "12px",
+                  fontWeight: "bold",
+                  color: "#1a1a1a",
+                  cursor: "pointer",
                 }}
               >
-                {formatTime(eventInfo.event.start!)} -{" "}
-                {formatTime(eventInfo.event.end!)}
+                <div>{eventInfo.event.title}</div>
+                {eventInfo.event.start && eventInfo.event.end && (
+                  <div
+                    style={{
+                      fontSize: "11px",
+                      fontWeight: "normal",
+                      marginTop: "2px",
+                    }}
+                  >
+                    {formatTime(eventInfo.event.start)} -{" "}
+                    {formatTime(eventInfo.event.end)}
+                  </div>
+                )}
               </div>
-            </div>
-          </Tooltip>
-        )}
+            </Tooltip>
+          );
+        }}
         height="auto"
         contentHeight="auto"
         aspectRatio={1.5}
