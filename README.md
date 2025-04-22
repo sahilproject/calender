@@ -1,36 +1,25 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+🗓️ Event Calendar App
+A full-featured event calendar application built with Nextjs, FullCalendar, Supabase, and Material UI. Users can create, update, delete, and view events with image support, color tagging, and interactive tooltips.
 
-## Getting Started
+🚀 Features
+📆 FullCalendar integration with day, week, and month views
 
-First, run the development server:
+🖱️ Click on any date to create a new event
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
-```
+🖼️ Upload images for events (stored in Supabase Storage)
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+🎨 Pick custom colors for event backgrounds
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+🛠️ Edit or delete existing events via modal
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+🔍 Tooltip preview with event details and image
 
-## Learn More
+🔄 Real-time fetch from Supabase for all event data
 
-To learn more about Next.js, take a look at the following resources:
+📸 Demo
+https://calender-sahil.vercel.app/
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+🛠️ Tech Stack
+Frontend: Nextjs, FullCalendar, TypeScript , Material UI
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
-
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+Backend : Supabase 

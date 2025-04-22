@@ -17,9 +17,16 @@ import {
   Box,
   Typography,
   Tooltip,
+  Table,
+  TableHead,
+  TableRow,
+  TableCell,
+  TableBody,
 } from "@mui/material";
 import { HexColorPicker } from "react-colorful";
 import { supabase } from "@/lib/supabaseClient";
+import Image from "next/image";
+
 
 const formatTime = (date: Date | null): string => {
   if (!date) return "N/A";
@@ -55,6 +62,10 @@ interface ExtendedEventProps {
   image?: string;
 }
 
+
+// sahil final 
+
+
 const MyCalendar: React.FC = () => {
   const [events, setEvents] = useState<EventData[]>([]);
   const [isModalOpen, setIsModalOpen] = useState<boolean>(false);
@@ -69,6 +80,7 @@ const MyCalendar: React.FC = () => {
     color: "#FF0000",
   });
   const [selectedEventId, setSelectedEventId] = useState<string | null>(null);
+  const [viewMode, setViewMode] = useState<"calendar" | "table">("calendar");
 
   const fetchEvents = async () => {
     const { data, error } = await supabase.from("events").select("*");
@@ -203,70 +215,153 @@ const MyCalendar: React.FC = () => {
 
   return (
     <>
-      <FullCalendar
-        plugins={[dayGridPlugin, interactionPlugin, timeGridPlugin]}
-        initialView="dayGridMonth"
-        events={events}
-        dateClick={handleDateClick}
-        eventClick={handleEventClick}
-        headerToolbar={{
-          left: "prev,next today",
-          center: "title",
-          right: "dayGridMonth,timeGridWeek,timeGridDay",
-        }}
-        eventContent={(eventInfo: EventContentArg) => {
-          const extendedProps = eventInfo.event.extendedProps as ExtendedEventProps;
+      <Box mb={2}>
+        <Button
+          variant="contained"
+          onClick={() =>
+            setViewMode((prev) => (prev === "calendar" ? "table" : "calendar"))
+          }
+        >
+          Switch to {viewMode === "calendar" ? "Table" : "Calendar"} View
+        </Button>
+      </Box>
 
-          return (
-            <Tooltip
-              title={
-                <Box>
-                  {extendedProps.image && (
-                    <img
-                      src={extendedProps.image}
-                      alt="Event Image"
-                      style={{ width: "150px", height: "auto" }}
-                    />
-                  )}
-                  <Typography variant="body2" color="textSecondary">
-                    {eventInfo.event.start?.toLocaleString()} -{" "}
-                    {eventInfo.event.end?.toLocaleString()}
-                  </Typography>
-                </Box>
-              }
-            >
-              <div
-                style={{
-                  backgroundColor: "#d4f8d4",
-                  padding: "6px 8px",
-                  borderRadius: "8px",
-                  fontSize: "12px",
-                  fontWeight: "bold",
-                  color: "#1a1a1a",
-                  cursor: "pointer",
-                }}
+      {viewMode === "calendar" ? (
+        <FullCalendar
+          plugins={[dayGridPlugin, interactionPlugin, timeGridPlugin]}
+          initialView="dayGridMonth"
+          events={events}
+          dateClick={handleDateClick}
+          eventClick={handleEventClick}
+          headerToolbar={{
+            left: "prev,next today",
+            center: "title",
+            right: "dayGridMonth,timeGridWeek,timeGridDay",
+          }}
+
+         
+          eventContent={(eventInfo: EventContentArg) => {
+            const extendedProps = eventInfo.event.extendedProps as ExtendedEventProps;
+          
+            const start = new Date(eventInfo.event.start!);
+            const end = new Date(eventInfo.event.end!);
+          
+            return (
+              <Tooltip
+                title={
+                  <Box>
+                    {extendedProps.image && (
+                      <Image
+                        src={extendedProps.image}
+                        alt="Event Image"
+                        width={200}
+                        height={200}
+                        // style={{ width: "150px", height: "auto" }}
+                      />
+                    )}
+                    <Typography variant="body2" color="textSecondary">
+                      {formatTime(start)} - {formatTime(end)}
+                    </Typography>
+                  </Box>
+                }
               >
-                <div>{eventInfo.event.title}</div>
-                {eventInfo.event.start && eventInfo.event.end && (
+                <div
+                  style={{
+                    backgroundColor: eventInfo.event.backgroundColor || "#d4f8d4",
+                    padding: "6px 8px",
+                    borderRadius: "8px",
+                    fontSize: "12px",
+                    fontWeight: "bold",
+                    color: "#1a1a1a",
+                    cursor: "pointer",
+                  }}
+                >
+                  <div>{eventInfo.event.title}</div>
+                  {eventInfo.event.start && eventInfo.event.end && (
+                    <div
+                      style={{
+                        fontSize: "11px",
+                        fontWeight: "normal",
+                        marginTop: "2px",
+                      }}
+                    >
+                      {formatTime(start)} - {formatTime(end)}
+                    </div>
+                  )}
+                </div>
+              </Tooltip>
+            );
+          }}
+          
+
+          height="auto"
+          contentHeight="auto"
+          aspectRatio={1.5}
+        />
+      ) : (
+        <Table>
+          <TableHead>
+            <TableRow>
+              <TableCell>Title</TableCell>
+              <TableCell>Image</TableCell>
+              <TableCell>Start</TableCell>
+              <TableCell>End</TableCell>
+              <TableCell>Color</TableCell>
+            </TableRow>
+          </TableHead>
+          <TableBody>
+            
+            {events.map((event) => (
+              <TableRow
+                key={event.id}
+                onClick={() =>
+                  handleEventClick({
+                    event: {
+                      id: event.id!,
+                      title: event.title,
+                      start: new Date(event.start),
+                      end: new Date(event.end),
+                      backgroundColor: event.backgroundColor,
+                      extendedProps: { image: event.image },
+                    } as any,
+                    el: null!,
+                    jsEvent: {} as any,
+                    view: {} as any,
+                  })
+                }
+                style={{ cursor: "pointer" }}
+              >
+                <TableCell>{event.title}</TableCell>
+                <TableCell>
+                  {event.image ? (
+                    <Image
+                      src={event.image}
+                      alt="event"
+                      width={60}
+                      height={60}
+                    />
+                  ) : (
+                    "N/A"
+                  )}
+                </TableCell>
+                <TableCell>{new Date(event.start).toLocaleString()}</TableCell>
+                <TableCell>{new Date(event.end).toLocaleString()}</TableCell>
+                <TableCell>
                   <div
                     style={{
-                      fontSize: "11px",
-                      fontWeight: "normal",
-                      marginTop: "2px",
+                      width: "20px",
+                      height: "20px",
+                      backgroundColor: event.backgroundColor,
+                      borderRadius: "50%",
                     }}
-                  >
-                    {formatTime(eventInfo.event.start)} -{" "}
-                    {formatTime(eventInfo.event.end)}
-                  </div>
-                )}
-              </div>
-            </Tooltip>
-          );
-        }}
-        height="auto"
-        contentHeight="auto"
-        aspectRatio={1.5}
-      />
+                  />
+                </TableCell>
+              </TableRow>
+            ))}
+
+          </TableBody>
+        </Table>
+      )}
 
       <Dialog open={isModalOpen} onClose={() => setIsModalOpen(false)} maxWidth="sm" fullWidth>
         <DialogTitle>{selectedEventId ? "Edit Event" : "Add Event"}</DialogTitle>
@@ -293,10 +388,12 @@ const MyCalendar: React.FC = () => {
             />
             {formData.image && (
               <Box mt={1}>
-                <img
+                <Image
                   src={formData.image}
                   alt="Preview"
-                  style={{ width: "100%", maxHeight: 200, objectFit: "cover" }}
+                  width={200}
+                  height={200}
+                  style={{  objectFit: "cover" }}
                 />
               </Box>
             )}
@@ -366,6 +463,7 @@ const MyCalendar: React.FC = () => {
           </Button>
         </DialogActions>
       </Dialog>
+
     </>
   );
 };
