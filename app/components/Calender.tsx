@@ -3,6 +3,7 @@ import React, { useEffect, useState } from "react";
 import FullCalendar from "@fullcalendar/react";
 import { EventClickArg, EventContentArg } from "@fullcalendar/core";
 import { DateClickArg } from "@fullcalendar/interaction";
+import { EventImpl } from "@fullcalendar/core/internal"; // for accessing extendedProps
 
 import dayGridPlugin from "@fullcalendar/daygrid";
 import interactionPlugin from "@fullcalendar/interaction";
@@ -27,7 +28,6 @@ import { HexColorPicker } from "react-colorful";
 import { supabase } from "@/lib/supabaseClient";
 import Image from "next/image";
 
-
 const formatTime = (date: Date | null): string => {
   if (!date) return "N/A";
   const hours = date.getHours();
@@ -37,6 +37,10 @@ const formatTime = (date: Date | null): string => {
   const formattedMinutes = minutes.toString().padStart(2, "0");
   return `${formattedHours}.${formattedMinutes}${ampm}`;
 };
+
+// sahil main
+
+type CustomEventClickArg = EventClickArg | { event: EventData };
 
 interface EventData {
   id?: string;
@@ -62,9 +66,7 @@ interface ExtendedEventProps {
   image?: string;
 }
 
-
-// sahil final 
-
+// sahil final
 
 const MyCalendar: React.FC = () => {
   const [events, setEvents] = useState<EventData[]>([]);
@@ -114,24 +116,32 @@ const MyCalendar: React.FC = () => {
     setIsModalOpen(true);
   };
 
-  const handleEventClick = (info: EventClickArg) => {
-    const start = new Date(info.event.start!);
-    const end = new Date(info.event.end!);
+  const handleEventClick = (info: CustomEventClickArg) => {
+    const event = info.event;
 
-    setSelectedEventId(info.event.id);
+    setSelectedEventId(event.id || null);
 
-    const extendedProps = info.event.extendedProps as ExtendedEventProps;
+    if (event.start && event.end) {
+      const start = new Date(event.start);
+      const end = new Date(event.end);
 
-    setFormData({
-      title: info.event.title,
-      image: extendedProps.image || "",
-      imageFile: null,
-      startDate: start.toISOString().split("T")[0],
-      startTime: start.toTimeString().slice(0, 5),
-      endDate: end.toISOString().split("T")[0],
-      endTime: end.toTimeString().slice(0, 5),
-      color: info.event.backgroundColor || "#FF0000",
-    });
+      // Narrow the type to safely access extendedProps
+      const image =
+        "extendedProps" in event
+          ? (event as EventImpl).extendedProps.image || ""
+          : (event as EventData).image || "";
+
+      setFormData({
+        title: event.title,
+        image: image,
+        imageFile: null,
+        startDate: start.toISOString().split("T")[0],
+        startTime: start.toTimeString().slice(0, 5),
+        endDate: end.toISOString().split("T")[0],
+        endTime: end.toTimeString().slice(0, 5),
+        color: event.backgroundColor || "#FF0000",
+      });
+    }
 
     setIsModalOpen(true);
   };
@@ -238,14 +248,13 @@ const MyCalendar: React.FC = () => {
             center: "title",
             right: "dayGridMonth,timeGridWeek,timeGridDay",
           }}
-
-         
           eventContent={(eventInfo: EventContentArg) => {
-            const extendedProps = eventInfo.event.extendedProps as ExtendedEventProps;
-          
+            const extendedProps = eventInfo.event
+              .extendedProps as ExtendedEventProps;
+
             const start = new Date(eventInfo.event.start!);
             const end = new Date(eventInfo.event.end!);
-          
+
             return (
               <Tooltip
                 title={
@@ -267,7 +276,8 @@ const MyCalendar: React.FC = () => {
               >
                 <div
                   style={{
-                    backgroundColor: eventInfo.event.backgroundColor || "#d4f8d4",
+                    backgroundColor:
+                      eventInfo.event.backgroundColor || "#d4f8d4",
                     padding: "6px 8px",
                     borderRadius: "8px",
                     fontSize: "12px",
@@ -292,8 +302,6 @@ const MyCalendar: React.FC = () => {
               </Tooltip>
             );
           }}
-          
-
           height="auto"
           contentHeight="auto"
           aspectRatio={1.5}
@@ -310,23 +318,19 @@ const MyCalendar: React.FC = () => {
             </TableRow>
           </TableHead>
           <TableBody>
-            
             {events.map((event) => (
               <TableRow
                 key={event.id}
                 onClick={() =>
                   handleEventClick({
                     event: {
-                      id: event.id!,
+                      id: event.id,
                       title: event.title,
-                      start: new Date(event.start),
-                      end: new Date(event.end),
+                      start: event.start,
+                      end: event.end,
                       backgroundColor: event.backgroundColor,
-                      extendedProps: { image: event.image },
-                    } as any,
-                    el: null!,
-                    jsEvent: {} as any,
-                    view: {} as any,
+                      image: event.image,
+                    },
                   })
                 }
                 style={{ cursor: "pointer" }}
@@ -358,19 +362,27 @@ const MyCalendar: React.FC = () => {
                 </TableCell>
               </TableRow>
             ))}
-
           </TableBody>
         </Table>
       )}
 
-      <Dialog open={isModalOpen} onClose={() => setIsModalOpen(false)} maxWidth="sm" fullWidth>
-        <DialogTitle>{selectedEventId ? "Edit Event" : "Add Event"}</DialogTitle>
+      <Dialog
+        open={isModalOpen}
+        onClose={() => setIsModalOpen(false)}
+        maxWidth="sm"
+        fullWidth
+      >
+        <DialogTitle>
+          {selectedEventId ? "Edit Event" : "Add Event"}
+        </DialogTitle>
         <DialogContent>
           <TextField
             label="Title"
             name="title"
             value={formData.title}
-            onChange={(e) => setFormData({ ...formData, title: e.target.value })}
+            onChange={(e) =>
+              setFormData({ ...formData, title: e.target.value })
+            }
             fullWidth
             margin="dense"
           />
@@ -383,7 +395,10 @@ const MyCalendar: React.FC = () => {
               type="file"
               accept="image/*"
               onChange={(e) =>
-                setFormData({ ...formData, imageFile: e.target.files?.[0] || null })
+                setFormData({
+                  ...formData,
+                  imageFile: e.target.files?.[0] || null,
+                })
               }
             />
             {formData.image && (
@@ -393,7 +408,7 @@ const MyCalendar: React.FC = () => {
                   alt="Preview"
                   width={200}
                   height={200}
-                  style={{  objectFit: "cover" }}
+                  style={{ objectFit: "cover" }}
                 />
               </Box>
             )}
@@ -403,7 +418,9 @@ const MyCalendar: React.FC = () => {
             label="Start Date"
             type="date"
             value={formData.startDate}
-            onChange={(e) => setFormData({ ...formData, startDate: e.target.value })}
+            onChange={(e) =>
+              setFormData({ ...formData, startDate: e.target.value })
+            }
             fullWidth
             margin="dense"
             InputLabelProps={{ shrink: true }}
@@ -412,7 +429,9 @@ const MyCalendar: React.FC = () => {
             label="Start Time"
             type="time"
             value={formData.startTime}
-            onChange={(e) => setFormData({ ...formData, startTime: e.target.value })}
+            onChange={(e) =>
+              setFormData({ ...formData, startTime: e.target.value })
+            }
             fullWidth
             margin="dense"
             InputLabelProps={{ shrink: true }}
@@ -421,7 +440,9 @@ const MyCalendar: React.FC = () => {
             label="End Date"
             type="date"
             value={formData.endDate}
-            onChange={(e) => setFormData({ ...formData, endDate: e.target.value })}
+            onChange={(e) =>
+              setFormData({ ...formData, endDate: e.target.value })
+            }
             fullWidth
             margin="dense"
             InputLabelProps={{ shrink: true }}
@@ -430,7 +451,9 @@ const MyCalendar: React.FC = () => {
             label="End Time"
             type="time"
             value={formData.endTime}
-            onChange={(e) => setFormData({ ...formData, endTime: e.target.value })}
+            onChange={(e) =>
+              setFormData({ ...formData, endTime: e.target.value })
+            }
             fullWidth
             margin="dense"
             InputLabelProps={{ shrink: true }}
@@ -463,7 +486,6 @@ const MyCalendar: React.FC = () => {
           </Button>
         </DialogActions>
       </Dialog>
-
     </>
   );
 };
